@@ -22,17 +22,19 @@
 #define TILT_ADDR 0x0C
 #define RANGE_REGISTER 
 
+/*	^^^  I probably don't need half of these... Added during testing haven't removed any. 	*/
 
+radio_image myimage[2500]; 	/* defined in header file	*/
 
-radio_image myimage[2500]; 
+/* 	These three values used by multiple functions	*/
 float scale_factor;
-
 float rotation[3];
 char *save_filename;
 
+double servotoradians(int pulsewidth){
 /* 	This will change depending on your equipment!
 	Convert servo pulse width to radians... one radian is equal to 509.3, center(0,0) is assumed at center of servo range (1220) */
-double servotoradians(int pulsewidth){
+	
 	return (double)(((pulsewidth - 1220.0) / 509.3));
 }
 
@@ -161,55 +163,60 @@ void displayMe(void)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glColor3f( 0.0f, 1.0f, 0.0f);
     glPushMatrix ();
+/*	Rotate objects if specified	*/
 	glRotatef(rotation[0], 1.0, 0.0, 0.0);
 	glRotatef(rotation[1], 0.0, 1.0, 0.0);
 	
 
+/*	Each point is drawn as a cube.  The color of the cube changes depending on the distance.
+	You could also code this to draw a surface from the points, I just don't know how to do 
+	lighting in opengl (it was too hard to see what was going on without it).  Cube is 
+	extrapolated to keep the array and save file a pure record of the actual measured points. 			*/
+	
       	for ( int position = 0; position < 2500; position++){
-	if (myimage[position].z){ 
-	glBegin(GL_QUADS);
-	float xpos;
-	float ypos;
-	float zpos;
-	xpos = (0-1)*(myimage[position].x / scale_factor);
-	ypos = (myimage[position].y / scale_factor);
-	//ypos = ((myimage[position].y / scale_factor) - 0.25) * 1.5;
-	zpos = (myimage[position].z / 2000.0);
-	glColor3f ( (1-zpos), (1-zpos), (zpos));
-		//front
-	glVertex3f( xpos, ypos, (zpos));
-	glVertex3f( (xpos - 0.05), ypos, (zpos));
-	glVertex3f( (xpos - 0.05), (ypos - 0.05), (zpos));
-	glVertex3f( xpos, (ypos - 0.05), (zpos));
-		//back
-	glVertex3f( xpos, ypos, (zpos-0.05));
-	glVertex3f( (xpos - 0.05), ypos, (zpos-0.05));
-	glVertex3f( (xpos - 0.05), (ypos - 0.05), (zpos-0.05));
-	glVertex3f( xpos, (ypos - 0.05), (zpos-0.05));
-		//left
-	glVertex3f( xpos, ypos, (zpos));
-	glVertex3f( (xpos), ypos, (zpos-0.05));
-	glVertex3f( (xpos), (ypos - 0.05), (zpos-0.05));
-	glVertex3f( xpos, (ypos - 0.05), (zpos));
-		//right
-	glVertex3f( (xpos - 0.05), ypos, (zpos));
-	glVertex3f( (xpos - 0.05), ypos, (zpos-0.05));
-	glVertex3f( (xpos - 0.05), (ypos - 0.05), (zpos-0.05));
-	glVertex3f( (xpos - 0.05), (ypos - 0.05), (zpos));
-		//bottom
-	glVertex3f( xpos, (ypos - 0.05), (zpos));
-	glVertex3f( xpos, (ypos - 0.05), (zpos-0.05));
-	glVertex3f( (xpos - 0.05), (ypos - 0.05), (zpos-0.05));
-	glVertex3f( (xpos - 0.05), (ypos - 0.05), (zpos));
-		//top
-	glVertex3f( xpos, ypos, (zpos));
-	glVertex3f( xpos, ypos, (zpos-0.05));
-	glVertex3f( (xpos - 0.05), ypos, (zpos-0.05));
-	glVertex3f( (xpos - 0.05), ypos, zpos);
+		if (myimage[position].z){ 
+			glBegin(GL_QUADS);
+			float xpos;
+			float ypos;
+			float zpos;
+			xpos = (0-1)*(myimage[position].x / scale_factor);
+			ypos = (myimage[position].y / scale_factor);
+			zpos = (myimage[position].z / 2000.0);
+			glColor3f ( (1-zpos), (1-zpos), (zpos));
+				//front
+			glVertex3f( xpos, ypos, (zpos));
+			glVertex3f( (xpos - 0.05), ypos, (zpos));
+			glVertex3f( (xpos - 0.05), (ypos - 0.05), (zpos));
+			glVertex3f( xpos, (ypos - 0.05), (zpos));
+				//back
+			glVertex3f( xpos, ypos, (zpos-0.05));
+			glVertex3f( (xpos - 0.05), ypos, (zpos-0.05));
+			glVertex3f( (xpos - 0.05), (ypos - 0.05), (zpos-0.05));
+			glVertex3f( xpos, (ypos - 0.05), (zpos-0.05));
+				//left
+			glVertex3f( xpos, ypos, (zpos));
+			glVertex3f( (xpos), ypos, (zpos-0.05));
+			glVertex3f( (xpos), (ypos - 0.05), (zpos-0.05));
+			glVertex3f( xpos, (ypos - 0.05), (zpos));
+				//right
+			glVertex3f( (xpos - 0.05), ypos, (zpos));
+			glVertex3f( (xpos - 0.05), ypos, (zpos-0.05));
+			glVertex3f( (xpos - 0.05), (ypos - 0.05), (zpos-0.05));
+			glVertex3f( (xpos - 0.05), (ypos - 0.05), (zpos));
+				//bottom
+			glVertex3f( xpos, (ypos - 0.05), (zpos));
+			glVertex3f( xpos, (ypos - 0.05), (zpos-0.05));
+			glVertex3f( (xpos - 0.05), (ypos - 0.05), (zpos-0.05));
+			glVertex3f( (xpos - 0.05), (ypos - 0.05), (zpos));
+				//top
+			glVertex3f( xpos, ypos, (zpos));
+			glVertex3f( xpos, ypos, (zpos-0.05));
+			glVertex3f( (xpos - 0.05), ypos, (zpos-0.05));
+			glVertex3f( (xpos - 0.05), ypos, zpos);
 
 
-	glEnd();
-	}
+			glEnd();
+		}
 	}
     glPopMatrix ();
     glutSwapBuffers();
@@ -302,6 +309,13 @@ void Keypress(unsigned char key, int x, int y){
 
 int main(int argc, char** argv)
 {
+	
+/*
+	This program maps a fixed resolution of 50x50 "pixels" at
+	a fixed servo rotation between readings.  If you wish more
+	flexibility add a command line argument for each value and 
+	plug them in to this function.
+*/
 printf("%s \n", "Depth Mapper V0.2");
 
 if (argv[0] != "-h"){
