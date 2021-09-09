@@ -16,13 +16,12 @@
 #include <math.h>
 #include "radio_image.h"
 
-#define LASER_ADDR 0x52
-#define SERVO_CONTROLLER 0x40
-#define PAN_ADDR 0x08
-#define TILT_ADDR 0x0C
-#define RANGE_REGISTER 
-
 /*	^^^  I probably don't need half of these... Added during testing haven't removed any. 	*/
+
+#define LASER_ADDR 0x52		/* i2c address of TOF10120	*/
+#define SERVO_CONTROLLER 0x40	/* i2c address of pca9685	*/
+#define PAN_ADDR 0x08		/* register address of tilt servo (Will change depending on your wiring	*/
+#define TILT_ADDR 0x0C		/* register address of pan servo (Will change depending on your wiring	*/
 
 radio_image myimage[2500]; 	/* defined in header file	*/
 
