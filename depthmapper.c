@@ -30,13 +30,15 @@ float scale_factor;
 float rotation[3];
 char *save_filename;
 
-/* convert servo pulse width to radians... one radian is equal to 509.3, center(0,0) is assumed at center of servo range (1220) */
+/* 	This will change depending on your equipment!
+	Convert servo pulse width to radians... one radian is equal to 509.3, center(0,0) is assumed at center of servo range (1220) */
 double servotoradians(int pulsewidth){
 	return (double)(((pulsewidth - 1220.0) / 509.3));
 }
 
 int8_t read_reg8(int file_handle, int i2c_addr, char address){
-	/* reads 8 bit register from I2C device */
+/*	Takes an i2c bus(file), slave address, and register address and returns 8 byte read value from device */
+	
   const gchar *buffer;
 	if (ioctl(file_handle, I2C_SLAVE, i2c_addr) < 0) {
 		printf("%s \n", "Byte read failed...failed to acquire bus access and/or talk to slave.");
@@ -63,7 +65,9 @@ int8_t read_reg8(int file_handle, int i2c_addr, char address){
 }
 
 int8_t write_reg8(int file_handle, int i2c_addr, int reg_addr, int8_t value){
-	/* writes single register value to I2C device */
+/*	Takes an i2c bus(file), slave address, register address, and 8 bit int
+	then writes to a single register on device 				*/
+	
   const gchar *buffer;
 	if (ioctl(file_handle, I2C_SLAVE, i2c_addr) < 0) {
 		printf("%s \n", "Byte write failed...failed to acquire bus access and/or talk to slave.");
@@ -84,7 +88,8 @@ int8_t write_reg8(int file_handle, int i2c_addr, int reg_addr, int8_t value){
 }
 
 int16_t write_reg16(int file_handle, int i2c_addr, int reg_addr, int16_t value){
-	/* takes 16 bit interger and writes DWORD (2 sequential 8 bit registers) value to I2C device */
+/*	Takes an i2c bus(file), slave address, register address, and 16 bit integer
+	and writes DWORD (2 sequential 8 bit registers) value to I2C device		 */
   const gchar *buffer;
 	if (ioctl(file_handle, I2C_SLAVE, i2c_addr) < 0) {
 		printf("%s \n", "DWORD write failed...failed to acquire bus access and/or talk to slave.");
@@ -115,7 +120,10 @@ int16_t write_reg16(int file_handle, int i2c_addr, int reg_addr, int16_t value){
 }
 
 int16_t read_reg16(int file_handle, int i2c_addr, char address){
-	/* reads two registers by incremental I2C reads */
+/*	Takes an i2c bus(file), slave address, and register address
+	then reads from two sequential 8 bit registersby incrementing
+	and returns the corresponding 16 bit value			*/
+	
   const gchar *buffer;
 	if (ioctl(file_handle, I2C_SLAVE, i2c_addr) < 0) {
 		printf("%s \n", "DWORD read failed...failed to acquire bus access and/or talk to slave.");
@@ -148,6 +156,8 @@ int16_t read_reg16(int file_handle, int i2c_addr, char address){
 
 void displayMe(void)
 {
+/*	This function draws the myimage array and displays it on screen */
+	
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glColor3f( 0.0f, 1.0f, 0.0f);
     glPushMatrix ();
@@ -206,42 +216,47 @@ void displayMe(void)
 }
 
 int distance(int file){
-	/* reads distance measurement from TOF10120 module */
+/*	This function reads from the TOF10120 "laser" distance sensor and returns the value.  
+	Sensor returns an integer between 0 and 2000(corresponding to millimeters). 
+	Requires the user to pass the correct i2c bus. 						*/
+	
 	int measurement = 0;
 	measurement = read_reg16(file, LASER_ADDR, 0x0);
 	return measurement;
-}  
+}
 
 void conversion_3d(int iteration, int localdistance, double pan, double tilt){
 	
 	/* Takes a vector and a distance, returns an X, Y and Z coordinate for the point.
 	   Assumes the origin is 0,0,0. Return order is X,Y,Z.   			*/
 	if (pan){
-	double w = cos(pan) * localdistance;
-	myimage[iteration].x = sin(pan) * localdistance;
-	myimage[iteration].y = sin(tilt) * w;
-	/* Ugly bithack for absolute value (Distance)*/
-	double bithack = ((cos(tilt) * w));
-	int64_t holder = *(int64_t*)&bithack;
-	holder = holder & 0b0111111111111111111111111111111111111111111111111111111111111111;
-	myimage[iteration].z = *(double*)&holder;
-	/* end hack*/
+		double w = cos(pan) * localdistance;
+		myimage[iteration].x = sin(pan) * localdistance;
+		myimage[iteration].y = sin(tilt) * w;
+		/* Ugly bithack for absolute value (Distance)*/
+		double bithack = ((cos(tilt) * w));
+		int64_t holder = *(int64_t*)&bithack;
+		holder = holder & 0b0111111111111111111111111111111111111111111111111111111111111111;
+		myimage[iteration].z = *(double*)&holder;
+		/* end hack*/
 	}
 	else {
-	myimage[iteration].x = 0;
-	myimage[iteration].y = sin(tilt) * localdistance;
-	/* Ugly bithack for absolute value (Distance)*/
-	double bithack = ((cos(tilt) * localdistance));
-	int64_t holder = *(int64_t*)&bithack;
-	holder = holder & 0b0111111111111111111111111111111111111111111111111111111111111111;
-	myimage[iteration].z = *(double*)&holder;
-	/* end hack*/
+		myimage[iteration].x = 0;
+		myimage[iteration].y = sin(tilt) * localdistance;
+		/* Ugly bithack for absolute value (Distance)*/
+		double bithack = ((cos(tilt) * localdistance));
+		int64_t holder = *(int64_t*)&bithack;
+		holder = holder & 0b0111111111111111111111111111111111111111111111111111111111111111;
+		myimage[iteration].z = *(double*)&holder;
+		/* end hack*/
 	}
 	return;
 }
 
 void Keypress(unsigned char key, int x, int y){
-/*do stuff*/
+/*	These key events allow manipulation of the displayed image 
+	(this event loop starts after image is scanned) 		*/
+
 	if (key == 'w'){
 		if (rotation[0] < 360){
 			rotation[0] += 1;
@@ -288,22 +303,33 @@ void Keypress(unsigned char key, int x, int y){
 int main(int argc, char** argv)
 {
 printf("%s \n", "Depth Mapper V0.2");
-	
+
 if (argv[0] != "-h"){
 
-	int readflag = 0;
-	/* Zero array used for storing coordinates. */
+/*	Zero array used for storing coordinates. */
 	for ( int count = 0; count < 2500; count++){
 	myimage[count].x = 0;
 	myimage[count].y = 0;
 	myimage[count].z = 0;
 	}
+	
+/*	Initialize variables */
 	rotation[0] = 0;
 	rotation[1] = 0;
 	rotation[2] = 0;
+	int readflag = 0;
 	scale_factor = 1000.0;
 	save_filename = "/home/otacon/opengl/last.3d";
 	int servo_speed = 20000;
+	
+	
+/*	Read from command line
+	check for:
+		scale factor
+		motor speed
+		save file
+		is this a read or write operation
+							*/
 	for (int i=0; i<argc;i++){
 		if (argv[i][1] == 's'){
 			scale_factor = (float)atoi(argv[((i+1))]);
@@ -343,8 +369,6 @@ if (argv[0] != "-h"){
 		
 	}
 
-
-
 	/* initialize opengl */
     	glutInit(&argc, argv);
     	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE);
@@ -356,13 +380,14 @@ if (argv[0] != "-h"){
     	glDepthFunc(GL_LESS);
     	glDepthRange(0.5f,1.0f);
     	glClearDepth(1.0f);
-	
+
 	if (readflag == 0) {
+/*	Quit if the user did not tell us to do anything!	*/
 		printf("%s \n", "Too few arguments...");
 		printf("%s \n %s \n %s \n %s \n %s \n %s \n", "Usage as Follows:", "depthmap -options arguments", "Options:", "-w filename		write to file", "-r filename 		Read from file", "-s scale_factor	Division factor for downscaling image(smaller = bigger / Default 1000)"); 
 		return 1;
 	}
-
+	
 	else if (readflag == 2){
 	/* Write Condition */
 		/* open I2C bus */
@@ -382,14 +407,15 @@ if (argv[0] != "-h"){
 		}
 		printf("%s \n", "done");
 
-		/*wake ip servo controller*/
+		/*wake up servo controller*/
 		printf("%s", "Waking up servo controller...");
 
 		write_reg8(file, SERVO_CONTROLLER, 0x0, 0x0);
 		sleep(1);
 
 		printf("%s \n", "done");
-		int flag = 0;
+
+		int flag = 0; /* used for allowing the sensor to sweep both left->right and right->left (saves some time) */
 
 		/* run servo mapping loop */
 		for (int tilt = 49; tilt > (0-1); tilt--){
